@@ -1,18 +1,4 @@
 /* global Element */
-
-/**
- *  The Annoying Site
- *  https://theannoyingsite.com
- *
- *  Author:
- *    Feross Aboukhadijeh
- *    https://feross.org
- *
- *  Patreon:
- *    If you enjoyed this, please support me on Patreon!
- *    https://www.patreon.com/feross
- */
-
 const SCREEN_WIDTH = window.screen.availWidth
 const SCREEN_HEIGHT = window.screen.availHeight
 const WIN_WIDTH = 480
@@ -63,14 +49,10 @@ const SEARCHES = [
   'why do i feel so empty',
   'why do i always feel hungry',
   'why do i always have diarrhea',
-  'why does my anus itch',
-  'why does my belly button smell',
   'why does my cat attack me',
   'why does my dog eat poop',
-  'why does my fart smell so bad',
   'why does my mom hate me',
-  'why does my pee smell bad',
-  'why does my poop float',
+  'why does i float',
   'proof that the earth is flat'
 ]
 
@@ -306,7 +288,7 @@ function initParentWindow () {
 }
 
 /**
- * Sites that link to theannoyingsite.com may specify `target='_blank'` to open the
+ * Sites that link to this site may specify `target='_blank'` to open the
  * link in a new window. For example, Messenger.com from Facebook does this.
  * However, that means that `window.opener` will be set, which allows us to redirect
  * that window. YES, WE CAN REDIRECT THE SITE THAT LINKED TO US.
@@ -321,7 +303,7 @@ function attemptToTakeoverReferrerWindow () {
 /**
  * Returns true if the parent window is on the same origin. It's not enough to check
  * that `window.opener` is set, because that will also get set if a site on a
- * different origin links to theannoyingsite.com with `target='_blank'`.
+ * different origin links to this site with `target='_blank'`.
  */
 function isParentSameOrigin () {
   try {
@@ -648,7 +630,6 @@ function speak (phrase) {
  * Start an annoying theramin that changes pitch and volume depending on
  * the mouse position. Uses a Web Audio oscillator. Reauires user-initiated
  * event.
- * Based on https://github.com/feross/TheAnnoyingSite.com/pull/2
  */
 function startTheramin () {
   const audioContext = new AudioContext()
@@ -722,8 +703,8 @@ function requestWebauthnAttestation () {
         // User:
         user: {
           id: new Uint8Array(16),
-          name: 'YOU_ARE_HACKED@THEANNOYINGSITE.COM',
-          displayName: 'YOU ARE HACKED'
+          name: 'CHAOS_USER@chaos.ouadielaachkar.com',
+          displayName: 'CHAOS MODE'
         },
 
         pubKeyCredParams: [{
@@ -955,7 +936,7 @@ function rainbowThemeColor () {
  * Copy cat pictures onto the user's clipboard. Requires user-initiated event.
  */
 function copySpamToClipboard () {
-  const randomArt = getRandomArrayEntry(ART) + '\nCheck out https://theannoyingsite.com'
+  const randomArt = getRandomArrayEntry(ART) + '\nCheck out https://chaos.ouadielaachkar.com'
   clipboardCopy(randomArt)
 }
 
